@@ -1,0 +1,44 @@
+[
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -fPIC -o CMakeFiles/CryptoCommApp.dir/CryptoCommApp_autogen/mocs_compilation.cpp.o -c /home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/mocs_compilation.cpp",
+  "file": "/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/mocs_compilation.cpp",
+  "output": "CMakeFiles/CryptoCommApp.dir/CryptoCommApp_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -fPIC -o CMakeFiles/CryptoCommApp.dir/src/main.cpp.o -c /home/nakeyi/lcmume_app/src/main.cpp",
+  "file": "/home/nakeyi/lcmume_app/src/main.cpp",
+  "output": "CMakeFiles/CryptoCommApp.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -fPIC -o CMakeFiles/CryptoCommApp.dir/src/MainWindow.cpp.o -c /home/nakeyi/lcmume_app/src/MainWindow.cpp",
+  "file": "/home/nakeyi/lcmume_app/src/MainWindow.cpp",
+  "output": "CMakeFiles/CryptoCommApp.dir/src/MainWindow.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -fPIC -o CMakeFiles/CryptoCommApp.dir/src/CryptoManager.cpp.o -c /home/nakeyi/lcmume_app/src/CryptoManager.cpp",
+  "file": "/home/nakeyi/lcmume_app/src/CryptoManager.cpp",
+  "output": "CMakeFiles/CryptoCommApp.dir/src/CryptoManager.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/nakeyi/lcmume_app/build/CryptoCommApp_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=gnu++17 -fPIC -o CMakeFiles/CryptoCommApp.dir/src/NetworkManager.cpp.o -c /home/nakeyi/lcmume_app/src/NetworkManager.cpp",
+  "file": "/home/nakeyi/lcmume_app/src/NetworkManager.cpp",
+  "output": "CMakeFiles/CryptoCommApp.dir/src/NetworkManager.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++  -I/home/nakeyi/lcmume_app/build/CryptoServer_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -std=gnu++17 -o CMakeFiles/CryptoServer.dir/CryptoServer_autogen/mocs_compilation.cpp.o -c /home/nakeyi/lcmume_app/build/CryptoServer_autogen/mocs_compilation.cpp",
+  "file": "/home/nakeyi/lcmume_app/build/CryptoServer_autogen/mocs_compilation.cpp",
+  "output": "CMakeFiles/CryptoServer.dir/CryptoServer_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/nakeyi/lcmume_app/build",
+  "command": "/usr/bin/c++  -I/home/nakeyi/lcmume_app/build/CryptoServer_autogen/include -I/home/nakeyi/lcmume_app/include -I/home/nakeyi/lcmume_app/src -std=gnu++17 -o CMakeFiles/CryptoServer.dir/src/Server_KGC.cpp.o -c /home/nakeyi/lcmume_app/src/Server_KGC.cpp",
+  "file": "/home/nakeyi/lcmume_app/src/Server_KGC.cpp",
+  "output": "CMakeFiles/CryptoServer.dir/src/Server_KGC.cpp.o"
+}
+]
