@@ -1,8 +1,10 @@
 #pragma once
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QByteArray>
 #include <memory>
+#include <vector>
 #include "models.h"
 #include "lcmume.hpp"
 
@@ -24,9 +26,13 @@ public slots:
     bool applyPartialKey(const QString &dStr, const QString &rStr, QString *errorMessage = nullptr);
 
     void setPeerPublicKeys(const QString &targetId, const QString &xStr, const QString &rStr);
+    bool addCurrentPeerToRecipients(QString *errorMessage = nullptr);
+    bool removeRecipient(const QString &targetId, QString *errorMessage = nullptr);
 
     QString serializeLocalPublicKey() const;
     QString serializeLocalPartialKey() const;
+    QStringList recipientIds() const;
+    int recipientCount() const;
 
     QString encryptMessageToJson(const QString &message, QString *errorMessage = nullptr);
     QString decryptMessageFromJson(const QString &ciphertextJson, QString *errorMessage = nullptr);
@@ -46,12 +52,21 @@ private:
 
     void ensureLocalKeyInit(QString *errorMessage);
     void ensurePeerKeyInit(QString *errorMessage);
+    PeerUserKeys *findRecipient(const QString &targetId);
+    const PeerUserKeys *findRecipient(const QString &targetId) const;
+    std::unique_ptr<PeerUserKeys> buildPeerKeys(const QString &targetId,
+                                                const QString &xStr,
+                                                const QString &rStr,
+                                                QString *errorMessage);
 
 private:
     std::unique_ptr<CryptoContext> m_ctx;
     UserKeys m_localKeys;
     PeerUserKeys m_peerKeys;
     bool m_peerKeysLoaded = false;
+    QString m_peerXStr;
+    QString m_peerRStr;
+    std::vector<std::unique_ptr<PeerUserKeys>> m_recipients;
 
     QString m_userId;
     QString m_targetId;

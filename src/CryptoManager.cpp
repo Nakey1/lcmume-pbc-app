@@ -3,8 +3,6 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QRandomGenerator>
-#include <QUuid>
 
 CryptoManager::CryptoManager(QObject *parent): QObject(parent) {}
 
@@ -23,15 +21,23 @@ QString CryptoManager::currentTargetId() const {
 void CryptoManager::setServerParams(const QString &paramStr, const QString &gStr, const QString &pPubStr) {
     try {
         m_ctx = std::make_unique<CryptoContext>(paramStr.toStdString());
+        m_localKeys = UserKeys();
+        m_peerKeys = PeerUserKeys();
+        m_peerKeysLoaded = false;
+        m_peerXStr.clear();
+        m_peerRStr.clear();
+        m_recipients.clear();
+
         if (!setElementFromString(m_ctx->G, gStr, true, nullptr)) {
-            emit cryptoInfo("G 解析失败，已保留上下文但未写入 G");
+            emit cryptoInfo("Failed to parse G");
         }
         if (!setElementFromString(m_ctx->P_pub, pPubStr, true, nullptr)) {
-            emit cryptoInfo("P_pub 解析失败，已保留上下文但未写入 P_pub");
+            emit cryptoInfo("Failed to parse P_pub");
         }
-        emit cryptoInfo("本地密码学上下文已初始化");
+
+        emit cryptoInfo("Crypto context initialized");
     } catch (const std::exception &e) {
-        emit cryptoInfo(QString("上下文初始化失败：%1").arg(e.what()));
+        emit cryptoInfo(QString("Context init failed: %1").arg(e.what()));
     }
 }
 
@@ -51,7 +57,7 @@ QString CryptoManager::elementToString(Element &e) const {
 
 bool CryptoManager::setElementFromString(Element &e, const QString &s, bool isG1, QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "上下文未初始化";
+        if (errorMessage) *errorMessage = "Context not initialized";
         return false;
     }
 
@@ -65,15 +71,16 @@ bool CryptoManager::setElementFromString(Element &e, const QString &s, bool isG1
 
     const QByteArray bytes = s.toUtf8();
     if (element_set_str(e.get(), bytes.constData(), 10) == 0) {
-        if (errorMessage) *errorMessage = QStringLiteral("element_set_str 失败：%1").arg(s);
+        if (errorMessage) *errorMessage = QStringLiteral("element_set_str failed: %1").arg(s);
         return false;
     }
+
     return true;
 }
 
 void CryptoManager::ensureLocalKeyInit(QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "请先获取公共参数并初始化上下文";
+        if (errorMessage) *errorMessage = "Init context first";
         return;
     }
 
@@ -85,7 +92,7 @@ void CryptoManager::ensureLocalKeyInit(QString *errorMessage) {
 
 void CryptoManager::ensurePeerKeyInit(QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "请先获取公共参数并初始化上下文";
+        if (errorMessage) *errorMessage = "Init context first";
         return;
     }
 
@@ -93,9 +100,51 @@ void CryptoManager::ensurePeerKeyInit(QString *errorMessage) {
     if (!m_peerKeys.R.is_initialized()) m_peerKeys.R.init_G1(*m_ctx->guard_);
 }
 
+PeerUserKeys *CryptoManager::findRecipient(const QString &targetId) {
+    for (auto &recipient : m_recipients) {
+        if (QString::fromStdString(recipient->id) == targetId) {
+            return recipient.get();
+        }
+    }
+    return nullptr;
+}
+
+const PeerUserKeys *CryptoManager::findRecipient(const QString &targetId) const {
+    for (const auto &recipient : m_recipients) {
+        if (QString::fromStdString(recipient->id) == targetId) {
+            return recipient.get();
+        }
+    }
+    return nullptr;
+}
+
+std::unique_ptr<PeerUserKeys> CryptoManager::buildPeerKeys(const QString &targetId,
+                                                           const QString &xStr,
+                                                           const QString &rStr,
+                                                           QString *errorMessage) {
+    if (!m_ctx) {
+        if (errorMessage) *errorMessage = "Context not initialized";
+        return nullptr;
+    }
+
+    auto peer = std::make_unique<PeerUserKeys>();
+    peer->id = targetId.toStdString();
+    peer->X.init_G1(*m_ctx->guard_);
+    peer->R.init_G1(*m_ctx->guard_);
+
+    if (!setElementFromString(peer->X, xStr, true, errorMessage)) {
+        return nullptr;
+    }
+    if (!setElementFromString(peer->R, rStr, true, errorMessage)) {
+        return nullptr;
+    }
+
+    return peer;
+}
+
 void CryptoManager::setPeerPublicKeys(const QString &targetId, const QString &xStr, const QString &rStr) {
     if (!m_ctx) {
-        emit cryptoInfo("先初始化上下文，再设置对方公钥");
+        emit cryptoInfo("Init context before loading peer keys");
         return;
     }
 
@@ -119,8 +168,59 @@ void CryptoManager::setPeerPublicKeys(const QString &targetId, const QString &xS
     }
 
     m_peerKeysLoaded = true;
+    m_peerXStr = xStr;
+    m_peerRStr = rStr;
     emit peerKeysUpdated(targetId, xStr, rStr);
-    emit cryptoInfo(QString("已载入对方公钥：%1").arg(targetId));
+    emit cryptoInfo(QString("Peer keys loaded: %1").arg(targetId));
+}
+
+bool CryptoManager::addCurrentPeerToRecipients(QString *errorMessage) {
+    if (!m_peerKeysLoaded || m_targetId.isEmpty()) {
+        if (errorMessage) *errorMessage = "Load peer keys first";
+        return false;
+    }
+
+    auto peer = buildPeerKeys(m_targetId, m_peerXStr, m_peerRStr, errorMessage);
+    if (!peer) {
+        return false;
+    }
+
+    for (auto &recipient : m_recipients) {
+        if (QString::fromStdString(recipient->id) == m_targetId) {
+            recipient = std::move(peer);
+            emit cryptoInfo(QString("Recipient updated: %1").arg(m_targetId));
+            return true;
+        }
+    }
+
+    m_recipients.push_back(std::move(peer));
+    emit cryptoInfo(QString("Recipient added: %1").arg(m_targetId));
+    return true;
+}
+
+bool CryptoManager::removeRecipient(const QString &targetId, QString *errorMessage) {
+    for (auto it = m_recipients.begin(); it != m_recipients.end(); ++it) {
+        if (QString::fromStdString((*it)->id) == targetId) {
+            m_recipients.erase(it);
+            emit cryptoInfo(QString("Recipient removed: %1").arg(targetId));
+            return true;
+        }
+    }
+
+    if (errorMessage) *errorMessage = QString("Recipient not found: %1").arg(targetId);
+    return false;
+}
+
+QStringList CryptoManager::recipientIds() const {
+    QStringList ids;
+    for (const auto &recipient : m_recipients) {
+        ids << QString::fromStdString(recipient->id);
+    }
+    return ids;
+}
+
+int CryptoManager::recipientCount() const {
+    return int(m_recipients.size());
 }
 
 bool CryptoManager::generateLocalKeys(QString *errorMessage) {
@@ -129,7 +229,7 @@ bool CryptoManager::generateLocalKeys(QString *errorMessage) {
     if (!m_ctx) return false;
 
     if (m_userId.trimmed().isEmpty()) {
-        if (errorMessage) *errorMessage = "userId 为空";
+        if (errorMessage) *errorMessage = "userId is empty";
         return false;
     }
 
@@ -153,7 +253,7 @@ bool CryptoManager::generateLocalKeys(QString *errorMessage) {
         elementToString(m_localKeys.X),
         elementToString(m_localKeys.R)
     );
-    emit cryptoInfo("本地私钥 x 与公钥 X 已生成");
+    emit cryptoInfo("Local key pair generated");
     return true;
 }
 
@@ -172,7 +272,7 @@ bool CryptoManager::applyPartialKey(const QString &dStr, const QString &rStr, QS
         elementToString(m_localKeys.X),
         elementToString(m_localKeys.R)
     );
-    emit cryptoInfo("服务器下发的部分私钥 d / R 已写入本地");
+    emit cryptoInfo("Partial key applied");
     return true;
 }
 
@@ -229,13 +329,13 @@ QString CryptoManager::serializeCiphertext(const Ciphertext &ct) const {
 
 bool CryptoManager::deserializeCiphertext(const QString &jsonText, Ciphertext &ct, QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "上下文未初始化";
+        if (errorMessage) *errorMessage = "Context not initialized";
         return false;
     }
 
     const auto doc = QJsonDocument::fromJson(jsonText.toUtf8());
     if (!doc.isObject()) {
-        if (errorMessage) *errorMessage = "密文 JSON 不是对象";
+        if (errorMessage) *errorMessage = "Ciphertext JSON is not an object";
         return false;
     }
 
@@ -252,7 +352,7 @@ bool CryptoManager::deserializeCiphertext(const QString &jsonText, Ciphertext &c
     const QByteArray c3 = QByteArray::fromBase64(obj.value("C3").toString().toLatin1());
     const QByteArray c4 = QByteArray::fromBase64(obj.value("C4").toString().toLatin1());
     if (c3.size() != CryptoContext::H2_LEN || c4.size() != CryptoContext::H3_LEN) {
-        if (errorMessage) *errorMessage = "C3/C4 长度不正确";
+        if (errorMessage) *errorMessage = "Invalid C3/C4 length";
         return false;
     }
     std::memcpy(ct.C3.data(), c3.constData(), c3.size());
@@ -285,25 +385,28 @@ bool CryptoManager::deserializeCiphertext(const QString &jsonText, Ciphertext &c
 
 QString CryptoManager::encryptMessageToJson(const QString &message, QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "请先初始化公共参数";
+        if (errorMessage) *errorMessage = "Init public params first";
         return {};
     }
-    if (!m_peerKeysLoaded) {
-        if (errorMessage) *errorMessage = "请先加载接收方公钥";
+    if (m_recipients.empty()) {
+        if (errorMessage) *errorMessage = "Add at least one recipient first";
         return {};
     }
-    if (m_localKeys.id.empty() || m_peerKeys.id.empty()) {
-        if (errorMessage) *errorMessage = "发送方/接收方 ID 不能为空";
+    if (m_localKeys.id.empty()) {
+        if (errorMessage) *errorMessage = "Sender id is empty";
         return {};
     }
     if (!m_localKeys.x.is_initialized() || !m_localKeys.d.is_initialized() ||
         !m_localKeys.X.is_initialized() || !m_localKeys.R.is_initialized()) {
-        if (errorMessage) *errorMessage = "本地密钥未完整初始化";
+        if (errorMessage) *errorMessage = "Local keys are incomplete";
         return {};
     }
 
     std::vector<PeerUserKeys*> receivers;
-    receivers.push_back(&m_peerKeys);
+    receivers.reserve(m_recipients.size());
+    for (auto &recipient : m_recipients) {
+        receivers.push_back(recipient.get());
+    }
 
     std::vector<unsigned char> msg(CryptoContext::MSG_LEN, 0);
     const QByteArray raw = message.toUtf8();
@@ -314,23 +417,23 @@ QString CryptoManager::encryptMessageToJson(const QString &message, QString *err
     try {
         Encrypt(ct, m_localKeys, receivers, msg, *m_ctx);
     } catch (const std::exception &e) {
-        if (errorMessage) *errorMessage = QString("Encrypt 失败：%1").arg(e.what());
+        if (errorMessage) *errorMessage = QString("Encrypt failed: %1").arg(e.what());
         return {};
     }
 
     const QString json = serializeCiphertext(ct);
     emit ciphertextReady(json);
-    emit cryptoInfo("加密完成");
+    emit cryptoInfo(QString("Encrypt done, recipients=%1").arg(m_recipients.size()));
     return json;
 }
 
 QString CryptoManager::decryptMessageFromJson(const QString &ciphertextJson, QString *errorMessage) {
     if (!m_ctx) {
-        if (errorMessage) *errorMessage = "请先初始化公共参数";
+        if (errorMessage) *errorMessage = "Init public params first";
         return {};
     }
     if (!m_peerKeysLoaded) {
-        if (errorMessage) *errorMessage = "请先加载接收方公钥";
+        if (errorMessage) *errorMessage = "Load sender public key first";
         return {};
     }
 
@@ -340,19 +443,19 @@ QString CryptoManager::decryptMessageFromJson(const QString &ciphertextJson, QSt
     }
 
     if (m_localKeys.id.empty()) {
-        if (errorMessage) *errorMessage = "当前用户 ID 为空";
+        if (errorMessage) *errorMessage = "Current user id is empty";
         return {};
     }
 
     std::vector<unsigned char> out;
     if (!Decrypt(out, m_localKeys, m_peerKeys, ct, *m_ctx)) {
-        if (errorMessage) *errorMessage = "Decrypt 失败：完整性校验或恢复失败";
+        if (errorMessage) *errorMessage = "Decrypt failed";
         return {};
     }
 
     QString plaintext = QString::fromUtf8(reinterpret_cast<const char *>(out.data()), int(out.size()));
     plaintext = plaintext.trimmed();
     emit plaintextReady(plaintext);
-    emit cryptoInfo("解密完成");
+    emit cryptoInfo("Decrypt done");
     return plaintext;
 }

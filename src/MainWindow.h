@@ -26,6 +26,8 @@ private slots:
     void onRequestPartialKeyClicked();
     void onUploadPublicKeyClicked();
     void onFetchPeerKeysClicked();
+    void onAddRecipientClicked();
+    void onRemoveRecipientClicked();
     void onEncryptClicked();
     void onDecryptClicked();
 
@@ -44,6 +46,7 @@ private slots:
 private:
     void setupConnections();
     QString serverBaseUrl() const;
+    void refreshRecipientListView();
 
 private:
     Ui::MainWindow *ui = nullptr;
